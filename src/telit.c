@@ -238,6 +238,10 @@ wat_status_t telit_start(wat_span_t *span)
 
 	/* Disable Sidetone as it sounds like echo on calls with long delay (e.g SIP calls) */
 	wat_cmd_enqueue(span, "AT#SHSSD=0", wat_response_shssd, NULL, span->config.timeout_command);
+	/* Disable auto answer, as we want to manage call control ourselves */
+	if (span->module.model == TELIT_HE910) { /* FIXME: Do other modules need this? */
+		wat_cmd_enqueue(span, "ATS0=0", NULL, NULL, span->config.timeout_command);
+	}
 
 	if (span->module.model != TELIT_CC864 && span->module.model != TELIT_DE910) {
 		/* Enable codec notifications 
@@ -280,7 +284,6 @@ wat_status_t telit_start(wat_span_t *span)
 		}
 
 	}
-
 	return WAT_SUCCESS;
 }
 
