@@ -223,7 +223,7 @@ wat_status_t telit_start(wat_span_t *span)
 
 	/* DTMF enable */
 	if (span->config.hardware_dtmf == WAT_TRUE) {
-		if (span->module.model == TELIT_DE910) {
+		if (span->module.model == TELIT_DE910 || span->module.model == TELIT_HE910) {
 			wat_log_span(span, WAT_LOG_INFO, "Enabling hardware DTMF for telit module %s (%d)\n", span->module.name, span->module.model);
 			wat_cmd_register(span, "#DTMFEV", wat_notify_dtmf_info);
 			wat_cmd_enqueue(span, "AT#DTMF=1", NULL, NULL, span->config.timeout_command);
