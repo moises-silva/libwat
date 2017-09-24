@@ -424,6 +424,7 @@ WAT_NOTIFY_FUNC(wat_notify_clip);
 WAT_NOTIFY_FUNC(wat_notify_creg);
 
 WAT_SCHEDULED_FUNC(wat_scheduled_clcc);
+WAT_SCHEDULED_FUNC(wat_span_scheduled_clcc);
 WAT_SCHEDULED_FUNC(wat_scheduled_csq);
 WAT_SCHEDULED_FUNC(wat_cmd_timeout);
 

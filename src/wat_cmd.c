@@ -467,17 +467,21 @@ wat_status_t wat_cmd_process(wat_span_t *span)
 
 				terminator = wat_match_terminator(tokens[i], &error);
 				if (terminator) {
+					wat_log_span(span, WAT_LOG_DEBUG, "Matched terminator '%s'\n", terminator->termstr);
 					if (terminator->call_progress_info) {
 						/* Check if this is a response to a ATD command */
 						if (span->cmd && !strncmp(span->cmd->cmd, "ATD", 3)) {
+							wat_log_span(span, WAT_LOG_DEBUG, "Handling response to ATD with terminator '%s'\n", terminator->termstr);
 							tokens_consumed += wat_cmd_handle_response(span, &tokens[i-tokens_unused], terminator, error);
 							tokens_unused = 0;
 						} else {
 							/* This could be a hangup from the remote side, schedule a CLCC to find out which call hung-up */
-							wat_cmd_enqueue(span, "AT+CLCC", wat_response_clcc, NULL, span->config.timeout_command);
+							wat_log_span(span, WAT_LOG_DEBUG, "Checking call progress status due to terminator\n");
+							wat_sched_timer(span->sched, "hangup_monitor", span->config.cmd_interval, wat_span_scheduled_clcc, span, NULL);
 							tokens_consumed++;
 						}						
 					} else {
+						wat_log_span(span, WAT_LOG_DEBUG, "Handling terminator response\n");
 						tokens_consumed += wat_cmd_handle_response(span, &tokens[i-tokens_unused], terminator, error);
 						tokens_unused = 0;
 					}
@@ -1431,7 +1435,7 @@ WAT_RESPONSE_FUNC(wat_response_clcc)
 					switch(entries[i].stat) {
 						case 3:
 							matched = WAT_TRUE;
-							/* Keep monitoring the call to find out when the call is anwered */
+							/* Keep monitoring the call to find out when the call is answered */
 							wat_sched_timer(span->sched, "progress_monitor", span->config.progress_poll_interval, wat_scheduled_clcc, (void*) call, &span->timeouts[WAT_PROGRESS_MONITOR]);
 							break;
 						case 0:
@@ -1849,6 +1853,12 @@ WAT_SCHEDULED_FUNC(wat_scheduled_clcc)
 {
 	wat_call_t *call = (wat_call_t *)data;
 	wat_cmd_enqueue(call->span, "AT+CLCC", wat_response_clcc, call, call->span->config.timeout_command);
+}
+
+WAT_SCHEDULED_FUNC(wat_span_scheduled_clcc)
+{
+	wat_span_t *span = (wat_span_t *)data;
+	wat_cmd_enqueue(span, "AT+CLCC", wat_response_clcc, NULL, span->config.timeout_command);
 }
 
 WAT_SCHEDULED_FUNC(wat_scheduled_csq)
